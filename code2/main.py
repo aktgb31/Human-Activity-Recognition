@@ -65,7 +65,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     timestamp = 'Tue Feb 14 191746 2023'
 
     location = {
-        'video_path': os.path.join(root, '../datasets/hmdb51dataset/video'),
+        'video_path': os.path.join(root, 'dataset/video'),
         'annotation_path': os.path.join(root, 'dataset/annotation'),
         'checkpoints_path': os.path.join(root, 'checkpoints', timestamp),
         'history_path': os.path.join(root, 'history', timestamp),
@@ -83,14 +83,14 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     # Preprocessing dataset
     transform_train = transforms.Compose([
         ToFloatTensorInZeroOne(),
-        transforms.Resize([128, 171]),
-        transforms.RandomHorizontalFlip(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        transforms.RandomCrop(112)
+        transforms.Resize([224,224]),
+        # transforms.RandomHorizontalFlip(),
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        # transforms.RandomCrop(112)
     ])
     transform_test = transforms.Compose([
         ToFloatTensorInZeroOne(),
-        transforms.Resize([128, 171]),
+        transforms.Resize([224,224]),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         transforms.CenterCrop(112)
     ])
@@ -119,18 +119,18 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     dataset_train, dataset_val = random_split(dataset_train_val, [train_len, val_len])
 
     # Loading dataset
-    # loader_train = DataLoader(
-    #     dataset=dataset_train,
-    #     batch_size=batch_size,
-    #     shuffle=True,
-    #     drop_last=False
-    # )
-    # loader_val = DataLoader(
-    #     dataset=dataset_val,
-    #     batch_size=batch_size,
-    #     shuffle=True,
-    #     drop_last=False
-    # )
+    loader_train = DataLoader(
+        dataset=dataset_train,
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=False
+    )
+    loader_val = DataLoader(
+        dataset=dataset_val,
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=False
+    )
     loader_test = DataLoader(
         dataset=dataset_test,
         batch_size=batch_size,
@@ -138,8 +138,8 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         drop_last=False
     )
 
-    # train_batches = len(loader_train)
-    # val_batches = len(loader_val)
+    train_batches = len(loader_train)
+    val_batches = len(loader_val)
     test_batches = len(loader_test)
 
     ######## Model & Hyperparameters ########
@@ -162,108 +162,108 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         history = {'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': []}
 
     
-    # ######## Train & Validation ########
-    # print('Train & Validation | Training start @ {}'.format(get_time()), flush=True)
+    ######## Train & Validation ########
+    print('Train & Validation | Training start @ {}'.format(get_time()), flush=True)
 
-    # for epoch in range(done_epochs, done_epochs + train_epochs):
-    #     ######## Train ########
-    #     print('Train | Epoch {:02d} start @ {}'.format(epoch + 1, get_time()), flush=True)
+    for epoch in range(done_epochs, done_epochs + train_epochs):
+        ######## Train ########
+        print('Train | Epoch {:02d} start @ {}'.format(epoch + 1, get_time()), flush=True)
 
-    #     model.train()
-    #     train_loss = 0
-    #     correct = 0
-    #     total = 0
+        model.train()
+        train_loss = 0
+        correct = 0
+        total = 0
 
-    #     for batch_index, (videos, audios, labels) in enumerate(loader_train):
-    #         print('Train | Epoch {:02d} | Batch {} / {} start'.format(epoch + 1, batch_index + 1, train_batches), flush=True)
-    #         # videos.shape = torch.Size([batch_size, frames_per_clip, 3, 112, 112])
-    #         # labels.shape = torch.Size([batch_size])
+        for batch_index, (videos, audios, labels) in enumerate(loader_train):
+            print('Train | Epoch {:02d} | Batch {} / {} start'.format(epoch + 1, batch_index + 1, train_batches), flush=True)
+            # videos.shape = torch.Size([batch_size, frames_per_clip, 3, 112, 112])
+            # labels.shape = torch.Size([batch_size])
 
-    #         videos = videos.permute(0, 2, 1, 3, 4)
-    #         # videos.shape = torch.Size([batch_size, 3, frames_per_clip, 112, 112])
+            videos = videos.permute(0, 2, 1, 3, 4)
+            # videos.shape = torch.Size([batch_size, 3, frames_per_clip, 112, 112])
 
-    #         videos = videos.to(device)
-    #         labels = labels.to(device)
+            videos = videos.to(device)
+            labels = labels.to(device)
 
-    #         # Forward pass
-    #         outputs = model(videos)
-    #         loss = criterion(outputs, labels)
+            # Forward pass
+            outputs = model(videos)
+            loss = criterion(outputs, labels)
 
-    #         # Backward pass and optimization
-    #         optimizer.zero_grad()
-    #         loss.backward()
-    #         optimizer.step()
+            # Backward pass and optimization
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-    #         # Train loss
-    #         train_loss += loss.item()
+            # Train loss
+            train_loss += loss.item()
 
-    #         # Train accuracy
-    #         value, predicted = torch.max(outputs.data, 1)
-    #         total += labels.size(0)
-    #         correct += (predicted == labels).sum().item()
-    #         train_acc = 100 * correct / total
+            # Train accuracy
+            value, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+            train_acc = 100 * correct / total
 
-    #     if (epoch + 1) > plot_bound:
-    #         history['train_loss'].append(train_loss)
-    #         history['train_acc'].append(train_acc)
+        if (epoch + 1) > plot_bound:
+            history['train_loss'].append(train_loss)
+            history['train_acc'].append(train_acc)
 
-    #     print('Train | Loss: {:.4f} | Accuracy: {:.4f}%'.format(train_loss, train_acc), flush=True)
+        print('Train | Loss: {:.4f} | Accuracy: {:.4f}%'.format(train_loss, train_acc), flush=True)
 
-    #     # Save checkpoint
-    #     checkpoint = {'model': model.state_dict(), 'optimizer': optimizer.state_dict()}
-    #     torch.save(checkpoint, os.path.join(location['checkpoints_path'], f"lstm_epoch{epoch + 1}.ckpt"))
+        # Save checkpoint
+        checkpoint = {'model': model.state_dict(), 'optimizer': optimizer.state_dict()}
+        torch.save(checkpoint, os.path.join(location['checkpoints_path'], f"lstm_epoch{epoch + 1}.ckpt"))
 
-    #     ######## Validation ########
-    #     print('Validation | Epoch {:02d} start @ {}'.format(epoch + 1, get_time()), flush=True)
+        ######## Validation ########
+        print('Validation | Epoch {:02d} start @ {}'.format(epoch + 1, get_time()), flush=True)
 
-    #     model.eval()
-    #     with torch.no_grad():
-    #         val_loss = 0
-    #         correct = 0
-    #         total = 0
+        model.eval()
+        with torch.no_grad():
+            val_loss = 0
+            correct = 0
+            total = 0
 
-    #         for batch_index, (videos, audios, labels) in enumerate(loader_val):
-    #             print('Validation | Epoch {:02d} | Batch {} / {} start'.format(epoch + 1, batch_index + 1, val_batches), flush=True)
+            for batch_index, (videos, audios, labels) in enumerate(loader_val):
+                print('Validation | Epoch {:02d} | Batch {} / {} start'.format(epoch + 1, batch_index + 1, val_batches), flush=True)
 
-    #             # videos.shape = torch.Size([batch_size, frames_per_clip, 3, 112, 112])
-    #             # labels.shape = torch.Size([batch_size])
+                # videos.shape = torch.Size([batch_size, frames_per_clip, 3, 112, 112])
+                # labels.shape = torch.Size([batch_size])
 
-    #             videos = videos.permute(0, 2, 1, 3, 4)
-    #             # videos.shape = torch.Size([batch_size, 3, frames_per_clip, 112, 112])
+                videos = videos.permute(0, 2, 1, 3, 4)
+                # videos.shape = torch.Size([batch_size, 3, frames_per_clip, 112, 112])
 
-    #             videos = videos.to(device)
-    #             labels = labels.to(device)
+                videos = videos.to(device)
+                labels = labels.to(device)
 
-    #             # Forward pass
-    #             outputs = model(videos)
-    #             loss = criterion(outputs, labels)
+                # Forward pass
+                outputs = model(videos)
+                loss = criterion(outputs, labels)
 
-    #             # Validation loss
-    #             val_loss += loss.item()
+                # Validation loss
+                val_loss += loss.item()
 
-    #             # Validation accuracy
-    #             value, predicted = torch.max(outputs.data, 1)
-    #             total += labels.size(0)
-    #             correct += (predicted == labels).sum().item()
+                # Validation accuracy
+                value, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
 
-    #         val_acc = 100 * correct / total
+            val_acc = 100 * correct / total
 
-    #         if (epoch + 1) > plot_bound:
-    #             history['val_loss'].append(val_loss)
-    #             history['val_acc'].append(val_acc)
+            if (epoch + 1) > plot_bound:
+                history['val_loss'].append(val_loss)
+                history['val_acc'].append(val_acc)
 
-    #         print('Validation | Loss: {:.4f} | Accuracy: {:.4f}%'.format(val_loss, val_acc), flush=True)
+            print('Validation | Loss: {:.4f} | Accuracy: {:.4f}%'.format(val_loss, val_acc), flush=True)
 
-    #     # Decay learning rate
-    #     if (epoch + 1) % 20 == 0:
-    #         learning_rate /= 3
-    #         update_learning_rate(optimizer, learning_rate)
+        # Decay learning rate
+        if (epoch + 1) % 20 == 0:
+            learning_rate /= 3
+            update_learning_rate(optimizer, learning_rate)
 
-    #     ######## Saving History ########
-    #     with open(os.path.join(location['history_path'], 'history.pickle'),'wb') as fw:
-    #         pickle.dump(history, fw)
+        ######## Saving History ########
+        with open(os.path.join(location['history_path'], 'history.pickle'),'wb') as fw:
+            pickle.dump(history, fw)
 
-    # print(f"Train & Validation | Finished training @ {get_time()}", flush=True)
+    print(f"Train & Validation | Finished training @ {get_time()}", flush=True)
 
     ######## Test ########
     print(f"Test | Evaluation start @ {get_time()}", flush=True)
