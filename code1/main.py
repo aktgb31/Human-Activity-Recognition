@@ -66,7 +66,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
 
     location = {
         'video_path': os.path.join(root, '../datasets/hmdb51dataset/video'),
-        'annotation_path': os.path.join(root, 'dataset/annotation'),
+        'annotation_path': os.path.join(root, '../datasets/hmdb51dataset/annotation'),
         'checkpoints_path': os.path.join(root, 'checkpoints', timestamp),
         'history_path': os.path.join(root, 'history', timestamp),
         'results_path': os.path.join(root, 'results', timestamp)

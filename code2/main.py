@@ -25,7 +25,7 @@ import pickle
 
 from dataset import prepare_dataset
 from dataset import ToFloatTensorInZeroOne
-from model import LSTM_with_CNN
+from model import LSTM_with_EFFICIENTNET
 
 def get_time() -> str:
     return time.strftime('%c', time.localtime(time.time()))
@@ -61,12 +61,12 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     ######## Preparing Dataset ########
     print(f"Dataset | Data preparation start @ {get_time()}", flush=True)
 
-    # timestamp = get_time().replace(':', '')
-    timestamp = 'Tue Feb 14 191746 2023'
+    timestamp = get_time().replace(':', '')
+    # timestamp = 'Sat Feb 25 045108 2023'
 
     location = {
-        'video_path': os.path.join(root, 'dataset/video'),
-        'annotation_path': os.path.join(root, 'dataset/annotation'),
+        'video_path': os.path.join(root, '../datasets/hmdb51dataset/video'),
+        'annotation_path': os.path.join(root, '../datasets/hmdb51dataset/annotation'),
         'checkpoints_path': os.path.join(root, 'checkpoints', timestamp),
         'history_path': os.path.join(root, 'history', timestamp),
         'results_path': os.path.join(root, 'results', timestamp)
@@ -83,19 +83,19 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     # Preprocessing dataset
     transform_train = transforms.Compose([
         ToFloatTensorInZeroOne(),
-        transforms.Resize([224,224]),
-        # transforms.RandomHorizontalFlip(),
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        # transforms.RandomCrop(112)
+        transforms.Resize([256,342]),
+        transforms.RandomHorizontalFlip(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        transforms.RandomCrop(224)
     ])
     transform_test = transforms.Compose([
         ToFloatTensorInZeroOne(),
-        transforms.Resize([224,224]),
+        transforms.Resize([256,342]),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        transforms.CenterCrop(112)
+        transforms.CenterCrop(224)
     ])
 
-    dataset_train_val = torchvision.datasets.HMDB51(
+    dataset_train = torchvision.datasets.HMDB51(
         root=location['video_path'],
         annotation_path=location['annotation_path'],
         frames_per_clip=10,
@@ -103,7 +103,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         train=True,
         transform=transform_train
     )
-    dataset_test = torchvision.datasets.HMDB51(
+    dataset_test_val = torchvision.datasets.HMDB51(
         root=location['video_path'],
         annotation_path=location['annotation_path'],
         frames_per_clip=10,
@@ -112,30 +112,35 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         transform=transform_test
     )
 
-    # Train set 52.5%, validation set 17.5%, test set 30%
-    dataset_len = len(dataset_train_val)
-    train_len = math.floor(dataset_len * 0.75)
-    val_len = dataset_len - train_len
-    dataset_train, dataset_val = random_split(dataset_train_val, [train_len, val_len])
+    # Train set 70%, validation set 15%, test set 15%
+    dataset_test_len = len(dataset_test_val)
+    test_len = math.floor(dataset_test_len * 0.5)
+    val_len = math.floor(dataset_test_len * 0.5)
+    dataset_test, dataset_val = random_split(dataset_test_val, [test_len, val_len],generator=torch.Generator().manual_seed(42))
+
+    num_workers=os.cpu_count()
 
     # Loading dataset
     loader_train = DataLoader(
         dataset=dataset_train,
         batch_size=batch_size,
         shuffle=True,
-        drop_last=False
+        drop_last=False,
+        num_workers=num_workers
     )
     loader_val = DataLoader(
         dataset=dataset_val,
         batch_size=batch_size,
         shuffle=True,
-        drop_last=False
+        drop_last=False,
+        num_workers=num_workers
     )
     loader_test = DataLoader(
         dataset=dataset_test,
         batch_size=batch_size,
         shuffle=False,
-        drop_last=False
+        drop_last=False,
+        num_workers=num_workers
     )
 
     train_batches = len(loader_train)
@@ -143,7 +148,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     test_batches = len(loader_test)
 
     ######## Model & Hyperparameters ########
-    model = LSTM_with_CNN().to(device)
+    model = LSTM_with_EFFICIENTNET(num_classes=51,hidden_size=51,num_layers=2,pretrained=True,fine_tune=False).to(device)
 
     learning_rate = 0.001
     criterion = nn.CrossEntropyLoss()
@@ -333,11 +338,11 @@ if __name__ == '__main__':
     batch_size = 512
 
     # Last checkpoint's training position
-    done_epochs = 55
+    done_epochs = 0
 
     # Consider Google Colab time limit
     # How much epochs to train now
-    train_epochs = 0
+    train_epochs = 30
 
     prepare_dataset(colab)
     train_and_eval(colab, batch_size, done_epochs, train_epochs, clear_log=False)

@@ -16,18 +16,6 @@ import os
 import glob
 import torch
 
-def download_file(URL, destination):
-    session = requests.Session()
-    response = session.get(URL, stream = True)
-    save_response_content(response, destination)
-
-def save_response_content(response, destination):
-    CHUNK_SIZE = 32768
-    with open(destination, "wb") as f:
-        for chunk in response.iter_content(CHUNK_SIZE):
-            # filter out keep-alive new chunks
-            if chunk:
-                f.write(chunk)
 
 def prepare_dataset(colab):
     if colab:
@@ -35,7 +23,7 @@ def prepare_dataset(colab):
         checkpoints_path = '/content/drive/MyDrive/checkpoints'
         results_path = '/content/drive/MyDrive/results'
     else:
-        base_path = '../datasets/hmdb51dataset'
+        base_path = '../datasets/ucfcrimedataset'
         checkpoints_path = './checkpoints'
         results_path = './results'
 
@@ -48,9 +36,9 @@ def prepare_dataset(colab):
     if not os.path.isdir(results_path):
         os.makedirs(results_path)
 
-    if not os.path.isfile(base_path + '/hmdb51_org.rar'):
+    if not os.path.isfile(base_path + '/anomalydetectiondatasetucf.zip'):
         print('Downloading the dataset...')
-        download_file('http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar', base_path + '/hmdb51_org.rar')
+        os.system('kaggle datasets download minhajuddinmeraj/anomalydetectiondatasetucf')
 
     if not os.path.isdir(base_path + '/video'):
         print('Unraring the dataset...')
