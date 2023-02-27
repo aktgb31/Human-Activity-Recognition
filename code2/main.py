@@ -113,12 +113,13 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     )
 
     # Train set 70%, validation set 15%, test set 15%
+    train_len = len(dataset_train)
     dataset_test_len = len(dataset_test_val)
     test_len = math.floor(dataset_test_len * 0.5)
     val_len = math.floor(dataset_test_len * 0.5)
     dataset_test, dataset_val = random_split(dataset_test_val, [test_len, val_len],generator=torch.Generator().manual_seed(42))
 
-    print(len(dataset_train),val_len,test_len)
+    print(train_len,val_len,test_len)
     # num_workers=os.cpu_count()
 
     # Loading dataset
@@ -207,7 +208,9 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
             value, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            train_acc = 100 * correct / total
+            
+        train_acc = 100 * correct / total
+        train_loss/=train_len
 
         if (epoch + 1) > plot_bound:
             history['train_loss'].append(train_loss)
@@ -253,6 +256,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
                 correct += (predicted == labels).sum().item()
 
             val_acc = 100 * correct / total
+            val_loss/=val_len
 
             if (epoch + 1) > plot_bound:
                 history['val_loss'].append(val_loss)
