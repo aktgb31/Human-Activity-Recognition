@@ -118,7 +118,8 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     val_len = math.floor(dataset_test_len * 0.5)
     dataset_test, dataset_val = random_split(dataset_test_val, [test_len, val_len],generator=torch.Generator().manual_seed(42))
 
-    num_workers=os.cpu_count()
+    print(len(dataset_train),val_len,test_len)
+    # num_workers=os.cpu_count()
 
     # Loading dataset
     loader_train = DataLoader(
@@ -126,21 +127,21 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         batch_size=batch_size,
         shuffle=True,
         drop_last=False,
-        num_workers=num_workers
+        # num_workers=num_workers
     )
     loader_val = DataLoader(
         dataset=dataset_val,
         batch_size=batch_size,
         shuffle=True,
         drop_last=False,
-        num_workers=num_workers
+        # num_workers=num_workers
     )
     loader_test = DataLoader(
         dataset=dataset_test,
         batch_size=batch_size,
         shuffle=False,
         drop_last=False,
-        num_workers=num_workers
+        # num_workers=num_workers
     )
 
     train_batches = len(loader_train)
@@ -335,7 +336,7 @@ if __name__ == '__main__':
     # Consider GPU memory limit
     # Paper suggested 512
     # Suggest 128 for GTX 1660 Ti
-    batch_size = 512
+    batch_size = 16
 
     # Last checkpoint's training position
     done_epochs = 0
@@ -346,3 +347,4 @@ if __name__ == '__main__':
 
     prepare_dataset(colab)
     train_and_eval(colab, batch_size, done_epochs, train_epochs, clear_log=False)
+        
