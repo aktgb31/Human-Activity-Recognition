@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
+from torchsummary import summary
 
 class LSTM_with_EFFICIENTNET(nn.Module):
     def __init__(self,num_classes,hidden_size, num_layers,pretrained,fine_tune):

@@ -61,8 +61,8 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     ######## Preparing Dataset ########
     print(f"Dataset | Data preparation start @ {get_time()}", flush=True)
 
-    # timestamp = get_time().replace(':', '')
-    timestamp = 'Mon Feb 27 074229 2023'
+    timestamp = get_time().replace(':', '')
+    # timestamp = 'Mon Feb 27 074229 2023'
 
     location = {
         'video_path': os.path.join(root, '../datasets/hmdb51dataset/video'),
@@ -95,7 +95,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         transforms.CenterCrop(224)
     ])
 
-    dataset_train = torchvision.datasets.HMDB51(
+    dataset_train_val = torchvision.datasets.HMDB51(
         root=location['video_path'],
         annotation_path=location['annotation_path'],
         frames_per_clip=10,
@@ -103,7 +103,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         train=True,
         transform=transform_train
     )
-    dataset_test_val = torchvision.datasets.HMDB51(
+    dataset_test = torchvision.datasets.HMDB51(
         root=location['video_path'],
         annotation_path=location['annotation_path'],
         frames_per_clip=10,
@@ -112,12 +112,12 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         transform=transform_test
     )
 
-    # Train set 70%, validation set 15%, test set 15%
-    train_len = len(dataset_train)
-    dataset_test_len = len(dataset_test_val)
-    test_len = math.floor(dataset_test_len * 0.5)
-    val_len = math.floor(dataset_test_len * 0.5)
-    dataset_test, dataset_val = random_split(dataset_test_val, [test_len, val_len],generator=torch.Generator().manual_seed(42))
+    # Train set 70%, validation set 15%, test set 30%
+    dataset_len = len(dataset_train_val)
+    test_len = len(dataset_test)
+    train_len = math.floor(dataset_len * 0.8)
+    val_len = dataset_len - train_len
+    dataset_train, dataset_val = random_split(dataset_train_val, [train_len, val_len],generator=torch.Generator().manual_seed(42))
 
     print(train_len,val_len,test_len)
     # num_workers=os.cpu_count()
@@ -343,11 +343,11 @@ if __name__ == '__main__':
     batch_size = 24
 
     # Last checkpoint's training position
-    done_epochs = 3
+    done_epochs = 0
 
     # Consider Google Colab time limit
     # How much epochs to train now
-    train_epochs = 27
+    train_epochs = 30
 
     prepare_dataset(colab)
     train_and_eval(colab, batch_size, done_epochs, train_epochs, clear_log=False)
