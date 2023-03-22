@@ -15,7 +15,72 @@ import requests
 import os
 import glob
 import torch
+import pandas as pd
 
+import torchvision
+from torch.utils.data import Dataset, DataLoader
+from torchvision.datasets.video_utils import VideoClips
+
+class UCFCrimeDataset(Dataset):
+    # UCF Crime Dataset
+
+    label_to_index = {
+        'Abuse': 0,
+        'Arrest': 1,
+        'Arson': 2,
+        'Assault': 3,
+        'Burglary': 4,
+        'Explosion': 5,
+        'Fighting': 6,
+        'RoadAccidents': 7,
+        'Robbery': 8,
+        'Shooting': 9,
+        'Shoplifting': 10,
+        'Stealing': 11,
+        'Vandalism': 12,
+        'Normal': 13
+    }
+
+    def __init__(
+            self,
+            root_dir: str,
+            annotation_file:str,
+            clip_length_in_frames: int,
+            frames_between_clips: int=1,
+            transform=None):
+        self.annotations = pd.read_csv(annotation_file)
+        self.root_dir = root_dir
+        self.transform = transform
+        self.video_clips=[]
+        self.class_index=[]
+
+        for label, video_path in self.annotations.itertuples(False):
+            print(label, video_path)
+            video,audio,metadata=torchvision.io.read_video(root_dir + '/' + video_path)
+            
+            clips=torch.split(video,clip_length_in_frames,dim=0)
+            for clip in clips:
+                if clip.shape[0] != clip_length_in_frames:
+                    continue
+                self.video_clips.append(clip)
+                self.class_index.append(self.label_to_index[label])
+        
+            
+
+    def __len__(self):
+        return len(self.video_clips)
+    
+    def __getitem__(self,index):
+        if torch.is_tensor(index):
+            index = index.tolist()
+        
+        video_clip=self.video_clips[index]
+        class_index=self.class_index[index]
+        
+        if self.transform:
+            video_clip=self.transform(video_clip)
+        
+        return video_clip,class_index
 
 def prepare_dataset(colab):
     if colab:
@@ -25,7 +90,7 @@ def prepare_dataset(colab):
     else:
         base_path = '../datasets/ucfcrimedataset'
         checkpoints_path = './checkpoints'
-        results_path = './results'
+        results_path = './results'    
 
     if not os.path.isdir(base_path):
         os.makedirs(base_path)
@@ -35,30 +100,11 @@ def prepare_dataset(colab):
 
     if not os.path.isdir(results_path):
         os.makedirs(results_path)
-
-    if not os.path.isfile(base_path + '/anomalydetectiondatasetucf.zip'):
-        print('Downloading the dataset...')
-        os.system('kaggle datasets download minhajuddinmeraj/anomalydetectiondatasetucf')
-
-    if not os.path.isdir(base_path + '/video'):
-        print('Unraring the dataset...')
-        os.makedirs(base_path + '/video')
-        os.system('unrar e ' + base_path + '/hmdb51_org.rar ' + base_path + '/video')
-        filenames = glob.glob(base_path + '/video/*.rar')
-        for file_name in filenames:
-            os.system(('unrar x %s ' + base_path + '/video') % file_name)
-
-    if not os.path.isfile(base_path + '/test_train_splits.rar'):
-        print('Downloading annotations of the dataset...')
-        download_file('http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/test_train_splits.rar', base_path + '/test_train_splits.rar')
-
-    if not os.path.isdir(base_path + '/annotation'):
-        print('Unraring annotations of the dataset...')
-        os.makedirs(base_path + '/annotation')
-        os.system('unrar e ' + base_path + '/test_train_splits.rar ' + base_path + '/annotation')
-        filenames = glob.glob(base_path + '/annotation/*.rar')
-        for file_name in filenames:
-            os.system('unrar x %s ' + base_path + '/annotation' % file_name)  
+    
+    # if base path as non zero files then return error
+    if len(os.listdir(base_path)) == 0:
+        print('No dataset found in base path.')
+        exit(1)
 
 def to_normalized_float_tensor(video):
     return video.permute(0, 3, 1, 2).to(torch.float) / 255
