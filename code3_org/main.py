@@ -62,8 +62,8 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     ######## Preparing Dataset ########
     print(f"Dataset | Data preparation start @ {get_time()}", flush=True)
 
-    # timestamp = get_time().replace(':', '')
-    timestamp = 'Mon Apr  3 111504 2023'
+    timestamp = get_time().replace(':', '')
+    # timestamp = 'Mon Apr  3 111504 2023'
 
     location = {
         'video_path': os.path.join(root, '../datasets/ucfcrimedataset'),
@@ -135,7 +135,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     test_batches = len(loader_test)
 
     ######## Model & Hyperparameters ########
-    model = LSTM_with_EFFICIENTNET(num_classes=14,hidden_size=16,num_layers=2,pretrained=True,fine_tune=False).to(device)
+    model = LSTM_with_EFFICIENTNET(num_classes=14,hidden_size=16,num_layers=2,pretrained=True,fine_tune=True).to(device)
 
     learning_rate = 0.001
     criterion = nn.CrossEntropyLoss()
@@ -328,11 +328,11 @@ if __name__ == '__main__':
     batch_size = 24
 
     # Last checkpoint's training position
-    done_epochs = 20
+    done_epochs = 0
 
     # Consider Google Colab time limit
     # How much epochs to train now
-    train_epochs = 40
+    train_epochs = 20
 
     prepare_dataset(colab)
     train_and_eval(colab, batch_size, done_epochs, train_epochs, clear_log=False)
