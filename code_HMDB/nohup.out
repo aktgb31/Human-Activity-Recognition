@@ -1,0 +1,42 @@
+Dataset | Data preparation start @ Sat Apr 22 10:24:55 2023
+  0%|          | 0/423 [00:00<?, ?it/s]  0%|          | 1/423 [00:01<08:03,  1.15s/it]  0%|          | 2/423 [00:01<04:07,  1.70it/s]  8%|▊         | 33/423 [00:01<00:10, 38.44it/s] 10%|█         | 44/423 [00:01<00:08, 43.02it/s] 13%|█▎        | 53/423 [00:01<00:07, 46.63it/s] 18%|█▊        | 78/423 [00:01<00:04, 76.89it/s] 21%|██▏       | 90/423 [00:02<00:06, 48.04it/s] 30%|██▉       | 126/423 [00:02<00:03, 75.03it/s] 32%|███▏      | 137/423 [00:02<00:04, 67.16it/s] 35%|███▌      | 149/423 [00:03<00:04, 58.44it/s] 37%|███▋      | 157/423 [00:03<00:04, 55.69it/s] 43%|████▎     | 184/423 [00:03<00:02, 87.01it/s] 47%|████▋     | 199/423 [00:03<00:03, 69.37it/s] 55%|█████▍    | 232/423 [00:03<00:01, 106.60it/s] 59%|█████▊    | 248/423 [00:04<00:02, 71.00it/s]  70%|██████▉   | 295/423 [00:04<00:01, 95.13it/s] 78%|███████▊  | 328/423 [00:05<00:01, 82.86it/s] 89%|████████▉ | 376/423 [00:05<00:00, 98.25it/s] 99%|█████████▉| 419/423 [00:05<00:00, 129.76it/s]100%|██████████| 423/423 [00:05<00:00, 70.74it/s] 31585 7897
+Train & Validation | Training start @ Sat Apr 22 10:25:02 2023
+Train | Epoch 01 start @ Sat Apr 22 10:25:02 2023
+
+Traceback (most recent call last):
+  File "main.py", line 335, in <module>
+    train_and_eval(colab, batch_size, done_epochs, train_epochs, clear_log=False)
+  File "main.py", line 166, in train_and_eval
+    for batch_index, (videos, labels) in enumerate(loader_train):
+  File "/usr/local/lib/python3.8/dist-packages/torch/utils/data/dataloader.py", line 635, in __next__
+    data = self._next_data()
+  File "/usr/local/lib/python3.8/dist-packages/torch/utils/data/dataloader.py", line 1347, in _next_data
+    return self._process_data(data)
+  File "/usr/local/lib/python3.8/dist-packages/torch/utils/data/dataloader.py", line 1373, in _process_data
+    data.reraise()
+  File "/usr/local/lib/python3.8/dist-packages/torch/_utils.py", line 636, in reraise
+    raise exception
+RuntimeError: Caught RuntimeError in DataLoader worker process 0.
+Original Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/torch/utils/data/_utils/worker.py", line 308, in _worker_loop
+    data = fetcher.fetch(index)
+  File "/usr/local/lib/python3.8/dist-packages/torch/utils/data/_utils/fetch.py", line 58, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/usr/local/lib/python3.8/dist-packages/torch/utils/data/_utils/fetch.py", line 58, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/usr/local/lib/python3.8/dist-packages/torch/utils/data/dataset.py", line 295, in __getitem__
+    return self.dataset[self.indices[idx]]
+  File "/workspace/project/code_HMDB/dataset.py", line 50, in __getitem__
+    video = self.transform(video)
+  File "/usr/local/lib/python3.8/dist-packages/torchvision/transforms/transforms.py", line 95, in __call__
+    img = t(img)
+  File "/usr/local/lib/python3.8/dist-packages/torch/nn/modules/module.py", line 1480, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/torchvision/transforms/transforms.py", line 270, in forward
+    return F.normalize(tensor, self.mean, self.std, self.inplace)
+  File "/usr/local/lib/python3.8/dist-packages/torchvision/transforms/functional.py", line 363, in normalize
+    return F_t.normalize(tensor, mean=mean, std=std, inplace=inplace)
+  File "/usr/local/lib/python3.8/dist-packages/torchvision/transforms/functional_tensor.py", line 922, in normalize
+    return tensor.sub_(mean).div_(std)
+RuntimeError: The size of tensor a (224) must match the size of tensor b (3) at non-singleton dimension 1
+
