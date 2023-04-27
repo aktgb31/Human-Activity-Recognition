@@ -68,7 +68,8 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     # 24= number of sizes
     # 15=number of frames per video
 
-    timestamp = "b0_256_3_24_16_"+get_time().replace(':', '')
+    # timestamp = "b0_256_3_24_16_"+get_time().replace(':', '')
+    timestamp='b0_256_3_24_16_Thu Apr 27 205047 2023'
     # timestamp = 'b0_128_2_24_15_Sat Apr 22 120648 2023'
     # timestamp = 'b7_128_2_24_15_Sat Apr 22 120753 2023'
     # timestamp='b3_128_2_24_15_Mon Apr 24 112246 2023'
@@ -182,11 +183,6 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
             outputs = model(videos)
             loss = criterion(outputs, labels)
 
-            # Backward pass and optimization
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
             # Train loss
             train_loss += loss.item()
 
@@ -198,9 +194,18 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         train_acc = 100 * correct / total
         train_loss/=train_len
 
+        # Gradient accumulation
+        # Backward pass and optimization
+        loss/=train_len
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
         if (epoch + 1) > plot_bound:
             history['train_loss'].append(train_loss)
             history['train_acc'].append(train_acc)
+
+        
 
         print('Train | Loss: {:.4f} | Accuracy: {:.4f}%'.format(train_loss, train_acc), flush=True)
 
@@ -329,11 +334,11 @@ if __name__ == '__main__':
     batch_size = 24
 
     # Last checkpoint's training position
-    done_epochs = 50
+    done_epochs = 0
 
     # Consider Google Colab time limit
     # How much epochs to train now
-    train_epochs = 30
+    train_epochs =50
 
     prepare_dataset(colab)
     train_and_eval(colab, batch_size, done_epochs, train_epochs, clear_log=False)
