@@ -11,9 +11,9 @@ class LSTM_with_EFFICIENTNET(nn.Module):
         self.num_layers = num_layers
         
         if pretrained:
-            self.efficientnet = models.efficientnet_b0(weights=models.EfficientNet_B0_Weights.DEFAULT)
+            self.efficientnet = models.efficientnet_b7(weights=models.EfficientNet_B7_Weights.DEFAULT)
         else:
-            self.efficientnet = models.efficientnet_b0(weights=None)
+            self.efficientnet = models.efficientnet_b7(weights=None)
 
         # modules=list(efficientnet.children())[:-1]
         # self.efficientnet=nn.Sequential(*modules)

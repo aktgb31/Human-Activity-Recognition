@@ -61,8 +61,8 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     ######## Preparing Dataset ########
     print(f"Dataset | Data preparation start @ {get_time()}", flush=True)
 
-    # timestamp = get_time().replace(':', '')
-    timestamp = 'Tue Feb 28 034517 2023'
+    timestamp = get_time().replace(':', '')
+    # timestamp = 'Tue Feb 28 034517 2023'
 
     location = {
         'video_path': os.path.join(root, '../datasets/hmdb51dataset/video'),

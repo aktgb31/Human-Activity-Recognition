@@ -68,8 +68,12 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     # 24= number of sizes
     # 15=number of frames per video
 
-    timestamp = "b0_128_2_24_15_"+get_time().replace(':', '')
-    # timestamp = 'Mon Apr  3 111504 2023'
+    timestamp = "b0_256_3_24_16_"+get_time().replace(':', '')
+    # timestamp = 'b0_128_2_24_15_Sat Apr 22 120648 2023'
+    # timestamp = 'b7_128_2_24_15_Sat Apr 22 120753 2023'
+    # timestamp='b3_128_2_24_15_Mon Apr 24 112246 2023'
+    # timestamp ='b0_256_2_24_15_Wed Apr 26 084548 2023'
+
 
     location = {
         'video_path': os.path.join(root, '../datasets/hmdb51dataset/video'),
@@ -98,8 +102,8 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     dataset_val=HMDB51Dataset(location['video_path'],
                                 location['annotation_path'],
                                 transform=transform,
-                                clip_length_in_frames=15,
-                                frames_between_clips=15,
+                                clip_length_in_frames=16,
+                                frames_between_clips=16,
                                 num_workers=num_workers)
 
     # Train set 80%, Testing set 20%
@@ -132,7 +136,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     test_batches = len(loader_test)
 
     ######## Model & Hyperparameters ########
-    model = LSTM_with_EFFICIENTNET(num_classes=51,hidden_size=128,num_layers=2,pretrained=True,fine_tune=False).to(device)
+    model = LSTM_with_EFFICIENTNET(num_classes=51,hidden_size=256,num_layers=3,pretrained=True,fine_tune=False).to(device)
 
     learning_rate = 0.0001
     criterion = nn.CrossEntropyLoss()
@@ -168,8 +172,6 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
             # videos.shape = torch.Size([batch_size, frames_per_clip, 3, 112, 112])
             # labels.shape = torch.Size([batch_size])
 
-            print (videos.shape)
-            print(labels.shape)
             videos = videos.permute(0, 2, 1, 3, 4)
             # videos.shape = torch.Size([batch_size, 3, frames_per_clip, 112, 112])
 
@@ -216,7 +218,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
             total = 0
 
             for batch_index, (videos, labels) in enumerate(loader_test):
-                print('Validation | Epoch {:02d} | Batch {} / {} start'.format(epoch + 1, batch_index + 1, val_batches), flush=True)
+                print('Validation | Epoch {:02d} | Batch {} / {} start'.format(epoch + 1, batch_index + 1, test_batches), flush=True)
 
                 # videos.shape = torch.Size([batch_size, frames_per_clip, 3, 112, 112])
                 # labels.shape = torch.Size([batch_size])
@@ -240,7 +242,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
                 correct += (predicted == labels).sum().item()
 
             val_acc = 100 * correct / total
-            val_loss/=val_len
+            val_loss/=test_len
 
             if (epoch + 1) > plot_bound:
                 history['val_loss'].append(val_loss)
@@ -249,8 +251,8 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
             print('Validation | Loss: {:.4f} | Accuracy: {:.4f}%'.format(val_loss, val_acc), flush=True)
 
         # Decay learning rate
-        # if (epoch + 1) % 20 == 0:
-        #     learning_rate /= 3
+        # if (epoch + 1) % 10 == 0:
+        #     learning_rate /= 2
         #     update_learning_rate(optimizer, learning_rate)
 
         ######## Saving History ########
@@ -327,11 +329,11 @@ if __name__ == '__main__':
     batch_size = 24
 
     # Last checkpoint's training position
-    done_epochs = 0
+    done_epochs = 50
 
     # Consider Google Colab time limit
     # How much epochs to train now
-    train_epochs = 40
+    train_epochs = 30
 
     prepare_dataset(colab)
     train_and_eval(colab, batch_size, done_epochs, train_epochs, clear_log=False)

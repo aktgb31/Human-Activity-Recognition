@@ -25,8 +25,8 @@ import pickle
 
 from dataset import prepare_dataset
 from dataset import ToFloatTensorInZeroOne
-from dataset import UCFCrimeDataset
-from model import LSTM_with_EFFICIENTNET
+from dataset import HMDB51Dataset
+from model_vit import LSTM_with_VIT
 
 def get_time() -> str:
     return time.strftime('%c', time.localtime(time.time()))
@@ -62,12 +62,18 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     ######## Preparing Dataset ########
     print(f"Dataset | Data preparation start @ {get_time()}", flush=True)
 
-    timestamp = get_time().replace(':', '')
-    # timestamp = 'Mon Apr  3 111504 2023'
+    # b0= EfficientNetB0
+    # 128= number of lstm cells
+    # 2= number of lstm layers
+    # 24= number of sizes
+    # 15=number of frames per video
+
+    # timestamp = "vit_128_2_24_15_"+get_time().replace(':', '')
+    timestamp="vit_128_2_24_15_Thu Apr 27 123401 2023"
 
     location = {
-        'video_path': os.path.join(root, '../datasets/ucfcrimedataset'),
-        'annotation_path': os.path.join(root, '../datasets/ucfcrimedataset/ucfcrimedataset.csv'),
+        'video_path': os.path.join(root, '../datasets/hmdb51dataset/video'),
+        'annotation_path': os.path.join(root, '../datasets/hmdb51dataset/hmdb51dataset.csv'),
         'checkpoints_path': os.path.join(root, 'checkpoints', timestamp),
         'history_path': os.path.join(root, 'history', timestamp),
         'results_path': os.path.join(root, 'results', timestamp)
@@ -85,26 +91,24 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     transform = transforms.Compose([
         ToFloatTensorInZeroOne(),
         transforms.Resize([224,224]),
-        # transforms.RandomHorizontalFlip(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
     num_workers=os.cpu_count()
-    dataset_val=UCFCrimeDataset(location['video_path'],
+    dataset_val=HMDB51Dataset(location['video_path'],
                                 location['annotation_path'],
                                 transform=transform,
-                                clip_length_in_frames=10,
-                                frames_between_clips=20,
+                                clip_length_in_frames=15,
+                                frames_between_clips=15,
                                 num_workers=num_workers)
 
-    # Train set 70%, validation set 15%, test set 30%
+    # Train set 80%, Testing set 20%
     dataset_len = len(dataset_val)
-    train_len = math.floor(dataset_len * 0.7)
-    val_len = math.floor(dataset_len * 0.2)
-    test_len = dataset_len - train_len - val_len
-    dataset_train, dataset_val, dataset_test = random_split(dataset_val, [train_len, val_len, test_len],generator=torch.Generator().manual_seed(42))
+    train_len = math.floor(dataset_len * 0.8)
+    test_len = dataset_len - train_len 
+    dataset_train, dataset_test = random_split(dataset_val, [train_len,test_len],generator=torch.Generator().manual_seed(69))
 
-    print(train_len,val_len,test_len)
+    print(train_len,test_len)
     
 
     # Loading dataset
@@ -115,13 +119,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         drop_last=False,
         num_workers=num_workers
     )
-    loader_val = DataLoader(
-        dataset=dataset_val,
-        batch_size=batch_size,
-        shuffle=True,
-        drop_last=False,
-        num_workers=num_workers
-    )
+
     loader_test = DataLoader(
         dataset=dataset_test,
         batch_size=batch_size,
@@ -131,13 +129,12 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     )
 
     train_batches = len(loader_train)
-    val_batches = len(loader_val)
     test_batches = len(loader_test)
 
     ######## Model & Hyperparameters ########
-    model = LSTM_with_EFFICIENTNET(num_classes=14,hidden_size=16,num_layers=2,pretrained=True,fine_tune=True).to(device)
+    model = LSTM_with_VIT(num_classes=51,hidden_size=128,num_layers=2,pretrained=True,fine_tune=False).to(device)
 
-    learning_rate = 0.001
+    learning_rate = 0.0001
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -216,8 +213,8 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
             correct = 0
             total = 0
 
-            for batch_index, (videos, labels) in enumerate(loader_val):
-                print('Validation | Epoch {:02d} | Batch {} / {} start'.format(epoch + 1, batch_index + 1, val_batches), flush=True)
+            for batch_index, (videos, labels) in enumerate(loader_test):
+                print('Validation | Epoch {:02d} | Batch {} / {} start'.format(epoch + 1, batch_index + 1, test_batches), flush=True)
 
                 # videos.shape = torch.Size([batch_size, frames_per_clip, 3, 112, 112])
                 # labels.shape = torch.Size([batch_size])
@@ -241,7 +238,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
                 correct += (predicted == labels).sum().item()
 
             val_acc = 100 * correct / total
-            val_loss/=val_len
+            val_loss/=test_len
 
             if (epoch + 1) > plot_bound:
                 history['val_loss'].append(val_loss)
@@ -250,9 +247,9 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
             print('Validation | Loss: {:.4f} | Accuracy: {:.4f}%'.format(val_loss, val_acc), flush=True)
 
         # Decay learning rate
-        if (epoch + 1) % 20 == 0:
-            learning_rate /= 3
-            update_learning_rate(optimizer, learning_rate)
+        # if (epoch + 1) % 10 == 0:
+        #     learning_rate /= 2
+        #     update_learning_rate(optimizer, learning_rate)
 
         ######## Saving History ########
         with open(os.path.join(location['history_path'], 'history.pickle'),'wb') as fw:
@@ -332,7 +329,7 @@ if __name__ == '__main__':
 
     # Consider Google Colab time limit
     # How much epochs to train now
-    train_epochs = 20
+    train_epochs = 10
 
     prepare_dataset(colab)
     train_and_eval(colab, batch_size, done_epochs, train_epochs, clear_log=False)
