@@ -25,7 +25,7 @@ import pickle
 
 from dataset import prepare_dataset
 from dataset import ToFloatTensorInZeroOne
-from dataset import HMDB51Dataset
+from dataset import SPHARDataset
 from model import LSTM_with_EFFICIENTNET
 
 def get_time() -> str:
@@ -68,18 +68,18 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     # 24= number of sizes
     # 15=number of frames per video
 
-    # timestamp = "b0_512_2_24_16_"+get_time().replace(':', '')
+    timestamp = "b0_512_2_24_16_"+get_time().replace(':', '')
     # timestamp='b0_256_3_24_16_Thu Apr 27 205047 2023'
     # timestamp = 'b0_128_2_24_15_Sat Apr 22 120648 2023'
     # timestamp = 'b7_128_2_24_15_Sat Apr 22 120753 2023'
     # timestamp='b3_128_2_24_15_Mon Apr 24 112246 2023'
     # timestamp ='b0_256_2_24_15_Wed Apr 26 084548 2023'
-    timestamp='b0_512_2_24_16_Thu Apr 27 210137 2023'
+    # timestamp='b0_512_2_24_16_Thu Apr 27 210137 2023'
 
 
     location = {
-        'video_path': os.path.join(root, '../datasets/hmdb51dataset/video'),
-        'annotation_path': os.path.join(root, '../datasets/hmdb51dataset/hmdb51dataset.csv'),
+        'video_path': os.path.join(root, '../datasets/sphar/videos'),
+        'annotation_path': os.path.join(root, '../datasets/sphar/sphar.csv'),
         'checkpoints_path': os.path.join(root, 'checkpoints', timestamp),
         'history_path': os.path.join(root, 'history', timestamp),
         'results_path': os.path.join(root, 'results', timestamp)
@@ -100,12 +100,12 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
-    num_workers=os.cpu_count()//2
-    dataset_val=HMDB51Dataset(location['video_path'],
+    num_workers=os.cpu_count()
+    dataset_val=SPHARDataset(location['video_path'],
                                 location['annotation_path'],
                                 transform=transform,
-                                clip_length_in_frames=16,
-                                frames_between_clips=16,
+                                clip_length_in_frames=24,
+                                frames_between_clips=24,
                                 num_workers=num_workers)
 
     # Train set 80%, Testing set 20%
@@ -138,7 +138,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     test_batches = len(loader_test)
 
     ######## Model & Hyperparameters ########
-    model = LSTM_with_EFFICIENTNET(num_classes=51,hidden_size=512,num_layers=2,pretrained=True,fine_tune=False).to(device)
+    model = LSTM_with_EFFICIENTNET(num_classes=14,hidden_size=512,num_layers=2,pretrained=True,fine_tune=False).to(device)
 
     learning_rate = 0.0001
     criterion = nn.CrossEntropyLoss()
@@ -260,9 +260,9 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
             print('Validation | Loss: {:.4f} | Accuracy: {:.4f}%'.format(val_loss, val_acc), flush=True)
 
         # Decay learning rate
-        if (epoch + 1) % 5 == 0:
-            learning_rate /= 2
-            update_learning_rate(optimizer, learning_rate)
+        # if (epoch + 1) % 10 == 0:
+        #     learning_rate /= 2
+        #     update_learning_rate(optimizer, learning_rate)
 
         ######## Saving History ########
         with open(os.path.join(location['history_path'], 'history.pickle'),'wb') as fw:
@@ -338,11 +338,11 @@ if __name__ == '__main__':
     batch_size = 24
 
     # Last checkpoint's training position
-    done_epochs =69
+    done_epochs =0
 
     # Consider Google Colab time limit
     # How much epochs to train now
-    train_epochs =10
+    train_epochs =50
 
     prepare_dataset(colab)
     train_and_eval(colab, batch_size, done_epochs, train_epochs, clear_log=False)

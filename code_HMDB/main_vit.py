@@ -325,11 +325,11 @@ if __name__ == '__main__':
     batch_size = 24
 
     # Last checkpoint's training position
-    done_epochs = 0
+    done_epochs = 9
 
     # Consider Google Colab time limit
     # How much epochs to train now
-    train_epochs = 10
+    train_epochs = 11
 
     prepare_dataset(colab)
     train_and_eval(colab, batch_size, done_epochs, train_epochs, clear_log=False)
