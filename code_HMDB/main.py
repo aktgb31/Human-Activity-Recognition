@@ -100,7 +100,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
-    num_workers=os.cpu_count()//2
+    num_workers=os.cpu_count()
     dataset_val=HMDB51Dataset(location['video_path'],
                                 location['annotation_path'],
                                 transform=transform,
@@ -338,11 +338,11 @@ if __name__ == '__main__':
     batch_size = 24
 
     # Last checkpoint's training position
-    done_epochs =69
+    done_epochs =103
 
     # Consider Google Colab time limit
     # How much epochs to train now
-    train_epochs =10
+    train_epochs =17
 
     prepare_dataset(colab)
     train_and_eval(colab, batch_size, done_epochs, train_epochs, clear_log=False)

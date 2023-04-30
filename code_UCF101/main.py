@@ -25,7 +25,7 @@ import pickle
 
 from dataset import prepare_dataset
 from dataset import ToFloatTensorInZeroOne
-from dataset import SPHARDataset
+from dataset import UCFCrimeDataset
 from model import LSTM_with_EFFICIENTNET
 
 def get_time() -> str:
@@ -62,24 +62,12 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     ######## Preparing Dataset ########
     print(f"Dataset | Data preparation start @ {get_time()}", flush=True)
 
-    # b0= EfficientNetB0
-    # 128= number of lstm cells
-    # 2= number of lstm layers
-    # 24= number of sizes
-    # 15=number of frames per video
-
-    timestamp = "b0_512_2_24_16_"+get_time().replace(':', '')
-    # timestamp='b0_256_3_24_16_Thu Apr 27 205047 2023'
-    # timestamp = 'b0_128_2_24_15_Sat Apr 22 120648 2023'
-    # timestamp = 'b7_128_2_24_15_Sat Apr 22 120753 2023'
-    # timestamp='b3_128_2_24_15_Mon Apr 24 112246 2023'
-    # timestamp ='b0_256_2_24_15_Wed Apr 26 084548 2023'
-    # timestamp='b0_512_2_24_16_Thu Apr 27 210137 2023'
-
+    timestamp = get_time().replace(':', '')
+    # timestamp = 'Mon Apr  3 111504 2023'
 
     location = {
-        'video_path': os.path.join(root, '../datasets/sphar/videos'),
-        'annotation_path': os.path.join(root, '../datasets/sphar/sphar.csv'),
+        'video_path': os.path.join(root, '../datasets/UCF-101'),
+        'annotation_path': os.path.join(root, '../datasets/UCF-101/ucf101.csv'),
         'checkpoints_path': os.path.join(root, 'checkpoints', timestamp),
         'history_path': os.path.join(root, 'history', timestamp),
         'results_path': os.path.join(root, 'results', timestamp)
@@ -97,15 +85,16 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     transform = transforms.Compose([
         ToFloatTensorInZeroOne(),
         transforms.Resize([224,224]),
+        # transforms.RandomHorizontalFlip(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
     num_workers=os.cpu_count()
-    dataset_val=SPHARDataset(location['video_path'],
+    dataset_val=UCFCrimeDataset(location['video_path'],
                                 location['annotation_path'],
                                 transform=transform,
                                 clip_length_in_frames=16,
-                                frames_between_clips=32,
+                                frames_between_clips=16,
                                 num_workers=num_workers)
 
     # Train set 80%, Testing set 20%
@@ -138,7 +127,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
     test_batches = len(loader_test)
 
     ######## Model & Hyperparameters ########
-    model = LSTM_with_EFFICIENTNET(num_classes=14,hidden_size=512,num_layers=2,pretrained=True,fine_tune=False).to(device)
+    model = LSTM_with_EFFICIENTNET(num_classes=101,hidden_size=512,num_layers=2,pretrained=True,fine_tune=False).to(device)
 
     learning_rate = 0.0001
     criterion = nn.CrossEntropyLoss()
@@ -184,6 +173,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
             outputs = model(videos)
             loss = criterion(outputs, labels)
 
+            # Backward pass and optimization
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -199,17 +189,9 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
         train_acc = 100 * correct / total
         train_loss/=train_len
 
-        # Gradient accumulation
-        # Backward pass and optimization
-        # optimizer.zero_grad()
-        # train_loss.backward()
-        # optimizer.step()
-        
         if (epoch + 1) > plot_bound:
             history['train_loss'].append(train_loss)
             history['train_acc'].append(train_acc)
-
-        
 
         print('Train | Loss: {:.4f} | Accuracy: {:.4f}%'.format(train_loss, train_acc), flush=True)
 
@@ -259,7 +241,7 @@ def train_and_eval(colab: bool, batch_size: int, done_epochs: int, train_epochs:
 
             print('Validation | Loss: {:.4f} | Accuracy: {:.4f}%'.format(val_loss, val_acc), flush=True)
 
-        # Decay learning rate
+        # # Decay learning rate
         # if (epoch + 1) % 10 == 0:
         #     learning_rate /= 2
         #     update_learning_rate(optimizer, learning_rate)
@@ -338,11 +320,11 @@ if __name__ == '__main__':
     batch_size = 24
 
     # Last checkpoint's training position
-    done_epochs =0
+    done_epochs = 0
 
     # Consider Google Colab time limit
     # How much epochs to train now
-    train_epochs =50
+    train_epochs = 50
 
     prepare_dataset(colab)
     train_and_eval(colab, batch_size, done_epochs, train_epochs, clear_log=False)
